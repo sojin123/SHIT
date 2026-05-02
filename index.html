@@ -1174,12 +1174,15 @@ window.selectPlayers = async function (n) {
       return;
     }
     video.srcObject = stream;
-    /* wait for metadata before play (required on some browsers) */
+    /* play() must be called BEFORE any await to stay in user-gesture context */
+    const playPromise = video.play();
+    /* also resolve once metadata is ready (runLoop checks readyState anyway) */
     await new Promise(res => {
-      if (video.readyState >= 1) { res(); return; }
-      video.addEventListener('loadedmetadata', res, { once: true });
+      if (video.readyState >= 2) { res(); return; }
+      video.addEventListener('canplay', res, { once: true });
+      setTimeout(res, 3000); // fallback timeout
     });
-    try { await video.play(); } catch (_) { /* autoplay attribute handles it */ }
+    if (playPromise) playPromise.catch(() => {});
   }
 
   /* kick off model → loop if not running */
@@ -1314,30 +1317,27 @@ window.backToLobby = function () {
 };
 
 /* ── Power calculation ── */
+/* ── Random power state ── */
+let _rTarget = 0;
+let _rFrames = 0;
+let _rInterval = 30;
+
 function calcPower(blendshapes) {
-  if (!blendshapes?.length) return 0;
-  const bs = {};
-  for (const { categoryName, score } of blendshapes[0].categories) bs[categoryName] = score;
-  const jaw    = bs['jawOpen']           || 0;
-  const browDL = bs['browDownLeft']      || 0;
-  const browDR = bs['browDownRight']     || 0;
-  const eyeWL  = bs['eyeWideLeft']       || 0;
-  const eyeWR  = bs['eyeWideRight']      || 0;
-  const cheek  = bs['cheekPuff']         || 0;
-  const sneerL = bs['noseSneerLeft']     || 0;
-  const sneerR = bs['noseSneerRight']    || 0;
-  const strL   = bs['mouthStretchLeft']  || 0;
-  const strR   = bs['mouthStretchRight'] || 0;
-  const browUp = bs['browInnerUp']       || 0;
+  if (!blendshapes?.length) { _rFrames = 0; return 0; }
 
-  let raw = jaw*55 + browDL*28 + browDR*28 + eyeWL*18 + eyeWR*18
-          + cheek*38 + sneerL*24 + sneerR*24 + strL*14 + strR*14 + browUp*12;
+  _rFrames++;
 
-  const combos = [jaw>0.25, browDL+browDR>0.35, eyeWL+eyeWR>0.25,
-                  cheek>0.18, sneerL+sneerR>0.25].filter(Boolean).length;
-  if (combos >= 2) raw *= 1 + (combos - 1) * 0.65;
+  /* 주기마다 새 목표 수치를 랜덤으로 뽑음 */
+  if (_rFrames === 1 || _rFrames % _rInterval === 0) {
+    _rInterval = 18 + Math.floor(Math.random() * 28); // 0.3~0.75초 간격
+    const roll = Math.random();
+    if (roll < 0.22)      _rTarget = Math.random() * 5000;           // 낮음
+    else if (roll < 0.55) _rTarget = 8000  + Math.random() * 47000;  // 중간
+    else if (roll < 0.82) _rTarget = 55000 + Math.random() * 35000;  // 높음
+    else                  _rTarget = 95000 + Math.random() * 25000;  // 대박 스파이크
+  }
 
-  return Math.floor(raw * raw * 320);
+  return Math.floor(_rTarget);
 }
 
 /* ── Canvas overlay ── */
@@ -1460,7 +1460,7 @@ function runLoop() {
     const faceHere = !!(res.faceBlendshapes?.length);
     const rawPow   = calcPower(res.faceBlendshapes);
 
-    smoothPower = smoothPower * 0.55 + rawPow * 0.45;
+    smoothPower = smoothPower * 0.82 + rawPow * 0.18; /* 느린 스무딩 → 극적인 오르내림 */
     const p = Math.floor(smoothPower);
 
     if (gameState === 'battle') {
