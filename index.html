@@ -644,259 +644,468 @@ body {
 
 
 <script>
-/* ═══════════════════════════════════════════
-   SF2 STAGE BACKGROUND (runs once on load)
-═══════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════
+   JAPANESE ROOFTOP NIGHT STAGE BACKGROUND
+═══════════════════════════════════════════════ */
 (function () {
-  const bg  = document.getElementById('bg-canvas');
-  const c   = bg.getContext('2d');
+  const bg = document.getElementById('bg-canvas');
+  const c  = bg.getContext('2d');
+
+  /* Pre-generate stable star positions */
+  const STARS = (() => {
+    const arr = [];
+    let sx = 12345, sy = 67890;
+    const rng = () => { sx ^= sx << 13; sx ^= sx >> 17; sx ^= sx << 5; return (sx >>> 0) / 4294967296; };
+    for (let i = 0; i < 220; i++) arr.push([rng(), rng() * 0.54, rng() * 1.1 + 0.35]);
+    return arr;
+  })();
 
   function draw() {
     const W = bg.width  = window.innerWidth;
     const H = bg.height = window.innerHeight;
+    c.clearRect(0, 0, W, H);
 
-    /* ── SKY ── */
+    /* ── 1. SKY  (deep indigo → warm orange at horizon) ── */
     const sky = c.createLinearGradient(0, 0, 0, H * 0.82);
-    sky.addColorStop(0,    '#3a0400');
-    sky.addColorStop(0.12, '#6b0c00');
-    sky.addColorStop(0.30, '#bb2800');
-    sky.addColorStop(0.52, '#e85000');
-    sky.addColorStop(0.70, '#ff8c22');
-    sky.addColorStop(0.82, '#c85800');
+    sky.addColorStop(0,    '#08051a');
+    sky.addColorStop(0.18, '#100c2c');
+    sky.addColorStop(0.42, '#180e38');
+    sky.addColorStop(0.64, '#2a1200');
+    sky.addColorStop(0.80, '#8c3a00');
+    sky.addColorStop(1,    '#c85800');
     c.fillStyle = sky;
     c.fillRect(0, 0, W, H * 0.82);
 
-    /* ── GROUND ── */
+    /* ── 2. GROUND ── */
     const gnd = c.createLinearGradient(0, H * 0.80, 0, H);
-    gnd.addColorStop(0,   '#3a1800');
-    gnd.addColorStop(0.4, '#1e0a00');
-    gnd.addColorStop(1,   '#080300');
+    gnd.addColorStop(0,   '#3a1400');
+    gnd.addColorStop(0.3, '#1a0800');
+    gnd.addColorStop(1,   '#040200');
     c.fillStyle = gnd;
     c.fillRect(0, H * 0.80, W, H * 0.20);
 
-    /* ground-sky border highlight */
-    c.fillStyle = 'rgba(255,140,0,0.18)';
-    c.fillRect(0, H * 0.78, W, H * 0.04);
-
-    /* ── CLOUD STREAKS ── */
-    const clouds = [
-      [0.10, 0.06, 0.28, 0.022, 0.40],
-      [0.55, 0.09, 0.22, 0.018, 0.32],
-      [0.78, 0.05, 0.18, 0.015, 0.25],
-      [0.04, 0.15, 0.35, 0.020, 0.28],
-      [0.50, 0.18, 0.28, 0.017, 0.22],
-      [0.20, 0.26, 0.40, 0.022, 0.20],
-      [0.65, 0.30, 0.25, 0.014, 0.18],
-      [0.08, 0.38, 0.30, 0.018, 0.15],
-    ];
-    for (const [xr, yr, wr, hr, a] of clouds) {
-      const cx = W * xr, cy = H * yr, rw = W * wr, rh = H * hr;
-      c.save();
-      c.globalAlpha = a;
-      c.fillStyle = '#3d1000';
+    /* ── 3. STARS ── */
+    for (const [xr, yr, sz] of STARS) {
+      c.globalAlpha = 0.25 + sz * 0.65;
+      c.fillStyle = '#ddeeff';
       c.beginPath();
-      c.ellipse(cx, cy, rw, rh, 0, 0, Math.PI * 2);
+      c.arc(xr * W, yr * H, sz * 0.75, 0, Math.PI * 2);
       c.fill();
-      c.fillStyle = '#220900';
-      c.beginPath();
-      c.ellipse(cx + rw * 0.05, cy, rw * 0.65, rh * 0.38, 0, 0, Math.PI * 2);
-      c.fill();
-      c.restore();
     }
+    c.globalAlpha = 1;
 
-    /* ── BACKGROUND WALL (horizontal plank strip) ── */
-    const wallTop = H * 0.55, wallH = H * 0.22;
-    c.fillStyle = '#1e0d00';
-    c.fillRect(0, wallTop, W, wallH);
-    c.strokeStyle = 'rgba(0,0,0,0.35)';
-    c.lineWidth = 1;
-    for (let y = wallTop + 10; y < wallTop + wallH; y += 11) {
-      c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke();
-    }
-    /* wall top rim */
-    const rimG = c.createLinearGradient(0, wallTop - 4, 0, wallTop + 8);
-    rimG.addColorStop(0, 'rgba(200,80,0,0.55)');
-    rimG.addColorStop(1, 'rgba(0,0,0,0)');
-    c.fillStyle = rimG;
-    c.fillRect(0, wallTop - 4, W, 12);
+    /* ── 4. CRESCENT MOON ── */
+    const mR = Math.min(W, H) * 0.058;
+    const mX = W * 0.630, mY = H * 0.170;
+    /* halo */
+    const mHalo = c.createRadialGradient(mX, mY, mR * 0.8, mX, mY, mR * 3.2);
+    mHalo.addColorStop(0,   'rgba(200,215,240,0.18)');
+    mHalo.addColorStop(1,   'rgba(0,0,0,0)');
+    c.fillStyle = mHalo;
+    c.beginPath(); c.arc(mX, mY, mR * 3.2, 0, Math.PI * 2); c.fill();
+    /* disc + crescent cut */
+    c.save();
+    c.beginPath(); c.arc(mX, mY, mR, 0, Math.PI * 2); c.clip();
+    c.fillStyle = '#c4cce0';
+    c.fillRect(mX - mR, mY - mR, mR * 2, mR * 2);
+    /* subtle crater texture */
+    c.fillStyle = 'rgba(155,162,188,0.45)';
+    c.beginPath(); c.arc(mX + mR*0.12, mY - mR*0.22, mR*0.22, 0, Math.PI*2); c.fill();
+    c.fillStyle = 'rgba(140,148,175,0.28)';
+    c.beginPath(); c.arc(mX - mR*0.28, mY + mR*0.28, mR*0.13, 0, Math.PI*2); c.fill();
+    /* shadow bite */
+    c.fillStyle = '#09051c';
+    c.beginPath(); c.arc(mX - mR*0.28, mY - mR*0.05, mR*0.86, 0, Math.PI*2); c.fill();
+    c.restore();
 
-    /* ── PAGODA (center) ── */
-    drawPagoda(c, W * 0.50, H * 0.06, H * 0.54);
+    /* ── 5. ORANGE CLOUDS (large, fluffy) ── */
+    paintCloud(c, W*0.14, H*0.36, W*0.26, H*0.13, 1.00);
+    paintCloud(c, W*0.30, H*0.24, W*0.18, H*0.09, 0.85);
+    paintCloud(c, W*0.04, H*0.50, W*0.16, H*0.07, 0.62);
+    paintCloud(c, W*0.50, H*0.44, W*0.15, H*0.07, 0.48);
+    paintCloud(c, W*0.65, H*0.30, W*0.11, H*0.06, 0.38);
+    paintCloud(c, W*0.38, H*0.55, W*0.20, H*0.05, 0.28);
+    paintCloud(c, W*0.72, H*0.50, W*0.10, H*0.05, 0.22);
 
-    /* ── LEFT: CANNON ── */
-    drawCannon(c, W, H);
+    /* ── 6. CASTLE / PAGODA (center silhouette) ── */
+    drawPagoda(c, W*0.50, H*0.17, H*0.60);
 
-    /* ── RIGHT: SCAFFOLDING ── */
-    drawScaffolding(c, W, H);
+    /* ── 7. BIRDS ── */
+    drawBirds(c, W, H);
 
-    /* ── ATMOSPHERIC HAZE ── */
-    const haze = c.createLinearGradient(0, H * 0.42, 0, H * 0.60);
-    haze.addColorStop(0,   'rgba(180,55,0,0)');
-    haze.addColorStop(0.5, 'rgba(180,55,0,0.07)');
-    haze.addColorStop(1,   'rgba(180,55,0,0)');
-    c.fillStyle = haze;
-    c.fillRect(0, H * 0.42, W, H * 0.18);
+    /* ── 8. LEFT CURVED ROOF ── */
+    drawLeftRoof(c, W, H);
 
-    /* ── VIGNETTE ── */
-    const vig = c.createRadialGradient(W/2, H/2, H * 0.12, W/2, H/2, W * 0.72);
-    vig.addColorStop(0, 'rgba(0,0,0,0)');
-    vig.addColorStop(1, 'rgba(0,0,0,0.65)');
+    /* ── 9. RIGHT STEPPED ROOF ── */
+    drawRightRoof(c, W, H);
+
+    /* ── 10. WOODEN STAGE FLOOR ── */
+    drawStageFloor(c, W, H);
+
+    /* ── 11. SIGN POST (風林火山) ── */
+    drawSignPost(c, W, H);
+
+    /* ── 12. GROUND MIST ── */
+    const mist = c.createRadialGradient(W*0.50, H*0.80, 0, W*0.50, H*0.80, W*0.48);
+    mist.addColorStop(0,   'rgba(210,130,55,0.20)');
+    mist.addColorStop(0.5, 'rgba(150,80,25,0.09)');
+    mist.addColorStop(1,   'rgba(0,0,0,0)');
+    c.fillStyle = mist;
+    c.fillRect(0, H*0.70, W, H*0.16);
+
+    /* ── 13. VIGNETTE ── */
+    const vig = c.createRadialGradient(W/2, H/2, H*0.08, W/2, H/2, W*0.82);
+    vig.addColorStop(0,   'rgba(0,0,0,0)');
+    vig.addColorStop(0.65,'rgba(0,0,0,0.20)');
+    vig.addColorStop(1,   'rgba(0,0,0,0.82)');
     c.fillStyle = vig;
     c.fillRect(0, 0, W, H);
   }
 
-  /* ── PAGODA ── */
-  function drawPagoda(c, cx, topY, totalH) {
-    const COL  = '#140800';
-    const COL2 = '#1e0f00';
-
-    /* spire */
-    c.fillStyle = COL;
-    c.fillRect(cx - 2, topY, 4, totalH * 0.07);
-
-    /* 4 tiers, top→bottom */
-    const tiers = [
-      { rw: 30,  rh: 16, bw: 18, bh: 20 },
-      { rw: 52,  rh: 20, bw: 30, bh: 24 },
-      { rw: 80,  rh: 24, bw: 46, bh: 28 },
-      { rw: 116, rh: 28, bw: 66, bh: 32 },
+  /* ──────────────────────────────
+     CLOUD (fluffy, amber/orange)
+  ────────────────────────────── */
+  function paintCloud(c, cx, cy, rw, rh, alpha) {
+    const bumps = [
+      [ 0.00,  0.00, 1.00, 1.00],
+      [-0.30,  0.10, 0.70, 0.70],
+      [ 0.32,  0.08, 0.72, 0.70],
+      [-0.58,  0.22, 0.54, 0.56],
+      [ 0.58,  0.20, 0.57, 0.57],
+      [ 0.00, -0.20, 0.58, 0.66],
+      [-0.20, -0.14, 0.50, 0.58],
+      [ 0.22, -0.16, 0.52, 0.60],
     ];
-
-    let y = topY + totalH * 0.07;
-    for (const { rw, rh, bw, bh } of tiers) {
-      /* roof — triangle with upturned wingtips */
-      c.fillStyle = COL;
+    c.save();
+    for (const [ox, oy, sw, sh] of bumps) {
+      const bx = cx + ox*rw, by = cy + oy*rh;
+      const g = c.createRadialGradient(bx, by, 0, bx, by, rw*sw);
+      g.addColorStop(0,    `rgba(218,98,18,${alpha*0.92})`);
+      g.addColorStop(0.45, `rgba(178,65,8,${alpha*0.78})`);
+      g.addColorStop(0.82, `rgba(95,30,3,${alpha*0.38})`);
+      g.addColorStop(1,    `rgba(40,10,0,0)`);
+      c.fillStyle = g;
       c.beginPath();
-      c.moveTo(cx, y);
-      c.lineTo(cx - rw + 6, y + rh);
-      c.quadraticCurveTo(cx - rw - 10, y + rh + 5, cx - rw - 4, y + rh - 2);
-      c.lineTo(cx - rw - 4, y + rh - 2);
-      /* skip to right side */
-      c.moveTo(cx, y);
-      c.lineTo(cx + rw - 6, y + rh);
-      c.quadraticCurveTo(cx + rw + 10, y + rh + 5, cx + rw + 4, y + rh - 2);
-      c.closePath();
-
-      /* simpler solid triangle fill */
-      c.beginPath();
-      c.moveTo(cx, y);
-      c.lineTo(cx - rw - 8, y + rh + 4);
-      c.lineTo(cx + rw + 8, y + rh + 4);
-      c.closePath();
+      c.ellipse(bx, by, rw*sw, rh*sh, 0, 0, Math.PI*2);
       c.fill();
-
-      /* roof underside shadow */
-      c.fillStyle = COL2;
-      c.fillRect(cx - bw, y + rh, bw * 2, 4);
-
-      /* body */
-      c.fillStyle = COL;
-      c.fillRect(cx - bw, y + rh + 4, bw * 2, bh);
-
-      /* window slits */
-      c.fillStyle = 'rgba(255,100,0,0.10)';
-      c.fillRect(cx - 5, y + rh + 8, 10, bh * 0.45);
-
-      y += rh + bh + 4;
     }
-
-    /* base platform */
-    c.fillStyle = COL;
-    c.fillRect(cx - 70, y, 140, 10);
+    /* bright top highlight */
+    const hg = c.createRadialGradient(cx-rw*0.08, cy-rh*0.18, 0, cx-rw*0.08, cy-rh*0.18, rw*0.44);
+    hg.addColorStop(0, `rgba(255,195,75,${alpha*0.60})`);
+    hg.addColorStop(1, 'rgba(255,140,30,0)');
+    c.fillStyle = hg;
+    c.globalAlpha = 1;
+    c.beginPath();
+    c.ellipse(cx-rw*0.08, cy-rh*0.18, rw*0.44, rh*0.40, 0, 0, Math.PI*2);
+    c.fill();
+    c.restore();
   }
 
-  /* ── CANNON (left) ── */
-  function drawCannon(c, W, H) {
-    const x1 = -W * 0.04, y1 = H * 0.76;
-    const x2 =  W * 0.30, y2 = H * 0.52;
-    const thick = Math.round(H * 0.072);
-
-    /* main barrel */
+  /* ──────────────────────────────
+     PAGODA / CASTLE SILHOUETTE
+  ────────────────────────────── */
+  function drawPagoda(c, cx, topY, totalH) {
+    const COL  = '#14090000'.slice(0,7) || '#140900';
+    const DARK = '#0a050000'.slice(0,7) || '#0a0500';
     c.save();
-    c.lineCap = 'round';
-    c.lineWidth = thick;
-    c.strokeStyle = '#1a1410';
-    c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
+    /* spire */
+    c.fillStyle = '#140900';
+    c.beginPath(); c.moveTo(cx, topY); c.lineTo(cx-2, topY+20); c.lineTo(cx+2, topY+20); c.closePath(); c.fill();
+    c.fillRect(cx-1.5, topY+20, 3, 14);
 
-    /* top sheen */
-    c.lineWidth = Math.max(2, thick * 0.14);
-    c.strokeStyle = 'rgba(100,80,40,0.45)';
-    const ox = -Math.sin(Math.atan2(y2-y1, x2-x1)) * thick * 0.35;
-    const oy =  Math.cos(Math.atan2(y2-y1, x2-x1)) * thick * 0.35;
-    c.beginPath();
-    c.moveTo(x1 + ox, y1 + oy);
-    c.lineTo(x2 + ox, y2 + oy);
-    c.stroke();
-
-    /* barrel rings */
-    c.strokeStyle = '#0d0a06';
-    c.lineWidth = 3;
-    for (let t = 0.15; t <= 0.85; t += 0.18) {
-      const rx = x1 + (x2 - x1) * t;
-      const ry = y1 + (y2 - y1) * t;
-      c.beginPath();
-      c.arc(rx, ry, thick / 2 + 1, 0, Math.PI * 2);
-      c.stroke();
+    const tiers = [
+      {rw:22, rh:12, bw:14, bh:16},
+      {rw:40, rh:17, bw:24, bh:20},
+      {rw:62, rh:21, bw:36, bh:24},
+      {rw:86, rh:25, bw:50, bh:28},
+      {rw:106,rh:27, bw:62, bh:30},
+    ];
+    let y = topY + 34;
+    for (const {rw, rh, bw, bh} of tiers) {
+      c.fillStyle = '#140900';
+      c.beginPath(); c.moveTo(cx, y); c.lineTo(cx-rw-8, y+rh+4); c.lineTo(cx+rw+8, y+rh+4); c.closePath(); c.fill();
+      c.fillStyle = '#0a0500';
+      c.fillRect(cx-bw, y+rh, bw*2, 3);
+      c.fillStyle = '#140900';
+      c.fillRect(cx-bw, y+rh+3, bw*2, bh);
+      c.fillStyle = 'rgba(255,120,30,0.10)';
+      c.fillRect(cx-5, y+rh+7, 10, bh*0.48);
+      y += rh+bh+3;
     }
+    c.fillStyle = '#140900';
+    c.fillRect(cx-88, y, 176, 8);
+    c.restore();
+  }
 
-    /* wheel hub */
-    const wx = x1 + (x2 - x1) * 0.12;
-    const wy = y1 + (y2 - y1) * 0.12 + thick * 0.5 + 14;
-    c.fillStyle = '#141008';
-    c.strokeStyle = '#0a0806';
-    c.lineWidth = 2;
-    c.beginPath(); c.arc(wx, wy, 28, 0, Math.PI * 2); c.fill(); c.stroke();
-    /* spokes */
-    for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
-      c.strokeStyle = '#0a0806';
-      c.lineWidth = 2;
+  /* ──────────────────────────────
+     BIRDS
+  ────────────────────────────── */
+  function drawBirds(c, W, H) {
+    const bd = [
+      [0.47,0.34,9],[0.51,0.32,8],[0.54,0.355,7],
+      [0.43,0.37,8],[0.57,0.345,7],[0.60,0.36,6],
+    ];
+    c.save();
+    c.strokeStyle = 'rgba(200,212,240,0.72)';
+    c.lineWidth = 1.5; c.lineCap = 'round';
+    for (const [xr,yr,ws] of bd) {
+      const bx=W*xr, by=H*yr;
       c.beginPath();
-      c.moveTo(wx + Math.cos(a) * 6, wy + Math.sin(a) * 6);
-      c.lineTo(wx + Math.cos(a) * 26, wy + Math.sin(a) * 26);
+      c.moveTo(bx-ws, by+1);
+      c.quadraticCurveTo(bx-ws/2, by-3.5, bx, by+0.5);
+      c.quadraticCurveTo(bx+ws/2, by-3.5, bx+ws, by+1);
       c.stroke();
     }
     c.restore();
   }
 
-  /* ── SCAFFOLDING (right) ── */
-  function drawScaffolding(c, W, H) {
-    const x  = W * 0.84;
-    const y0 = H * 0.28;
-    const h  = H * 0.50;
-    const w  = W * 0.18;
+  /* ──────────────────────────────
+     LEFT CURVED JAPANESE ROOF
+     (large, with tomoe ornaments)
+  ────────────────────────────── */
+  function drawLeftRoof(c, W, H) {
+    c.save();
 
-    c.fillStyle = '#140e06';
-    c.strokeStyle = '#0a0804';
+    /* main body */
+    c.fillStyle = '#1a1828';
+    c.beginPath();
+    c.moveTo(-W*0.02, H);
+    c.lineTo(-W*0.02, H*0.50);
+    c.bezierCurveTo(W*0.06, H*0.14, W*0.22, H*0.26, W*0.45, H*0.42);
+    c.lineTo(W*0.47, H);
+    c.closePath();
+    c.fill();
+
+    /* top (slightly lighter blue face) */
+    c.fillStyle = '#22203a';
+    c.beginPath();
+    c.moveTo(-W*0.02, H*0.50);
+    c.bezierCurveTo(W*0.06, H*0.14, W*0.22, H*0.26, W*0.45, H*0.42);
+    c.lineTo(W*0.45, H*0.48);
+    c.bezierCurveTo(W*0.22, H*0.34, W*0.06, H*0.22, -W*0.02, H*0.58);
+    c.closePath();
+    c.fill();
+
+    /* eave strip */
+    c.fillStyle = '#28263e';
+    c.beginPath();
+    c.moveTo(-W*0.02, H*0.58);
+    c.bezierCurveTo(W*0.06, H*0.22, W*0.22, H*0.34, W*0.45, H*0.48);
+    c.lineTo(W*0.45, H*0.535);
+    c.bezierCurveTo(W*0.22, H*0.395, W*0.06, H*0.275, -W*0.02, H*0.635);
+    c.closePath();
+    c.fill();
+
+    /* eave ridge highlight */
+    c.strokeStyle = 'rgba(80,76,122,0.55)';
+    c.lineWidth = 2.5;
+    c.beginPath();
+    c.moveTo(-W*0.02, H*0.50);
+    c.bezierCurveTo(W*0.06, H*0.14, W*0.22, H*0.26, W*0.45, H*0.42);
+    c.stroke();
+
+    /* ── Tomoe (巴) ornaments ── */
+    const tomoe = [
+      [W*0.04, H*0.665, H*0.052],
+      [W*0.14, H*0.555, H*0.054],
+      [W*0.26, H*0.455, H*0.050],
+      [W*0.37, H*0.415, H*0.044],
+    ];
+    for (const [tx, ty, tr] of tomoe) {
+      /* drop shadow */
+      c.fillStyle = 'rgba(0,0,0,0.38)';
+      c.beginPath(); c.arc(tx+2, ty+3, tr, 0, Math.PI*2); c.fill();
+      /* outer dark ring */
+      c.fillStyle = '#100e1c';
+      c.beginPath(); c.arc(tx, ty, tr, 0, Math.PI*2); c.fill();
+      /* spokes */
+      c.strokeStyle = '#08070e';
+      c.lineWidth = Math.max(1.5, tr*0.09);
+      for (let a=0; a<Math.PI*2; a+=Math.PI/4) {
+        c.beginPath();
+        c.moveTo(tx+Math.cos(a)*tr*0.40, ty+Math.sin(a)*tr*0.40);
+        c.lineTo(tx+Math.cos(a)*tr*0.92, ty+Math.sin(a)*tr*0.92);
+        c.stroke();
+      }
+      /* inner face */
+      c.fillStyle = '#1a1828';
+      c.beginPath(); c.arc(tx, ty, tr*0.66, 0, Math.PI*2); c.fill();
+      /* center dot */
+      c.fillStyle = '#0e0c18';
+      c.beginPath(); c.arc(tx, ty, tr*0.26, 0, Math.PI*2); c.fill();
+      /* rim highlight */
+      c.strokeStyle = 'rgba(82,78,118,0.48)';
+      c.lineWidth = 1.5;
+      c.beginPath(); c.arc(tx, ty, tr, 0, Math.PI*2); c.stroke();
+    }
+
+    c.restore();
+  }
+
+  /* ──────────────────────────────
+     RIGHT STEPPED TILE ROOF
+  ────────────────────────────── */
+  function drawRightRoof(c, W, H) {
+    c.save();
+
+    /* body */
+    c.fillStyle = '#1c1a2a';
+    c.beginPath();
+    c.moveTo(W*1.02, H);
+    c.lineTo(W*1.02, H*0.36);
+    c.lineTo(W*0.58, H*0.18);
+    c.lineTo(W*0.57, H*0.24);
+    c.lineTo(W*0.58, H);
+    c.closePath();
+    c.fill();
+
+    /* top face */
+    c.fillStyle = '#24223a';
+    c.beginPath();
+    c.moveTo(W*1.02, H*0.36);
+    c.lineTo(W*0.58, H*0.18);
+    c.lineTo(W*0.57, H*0.24);
+    c.lineTo(W*1.02, H*0.42);
+    c.closePath();
+    c.fill();
+
+    /* tile lines — diagonal (follow the slope) */
+    const steps = 18;
+    const x0=W*0.575, y0=H*0.205, x1=W*1.02, y1=H*0.39;
+    c.strokeStyle = '#0e0c1a';
+    c.lineWidth = 1.8;
+    for (let i=0; i<=steps; i++) {
+      const t = i/steps;
+      const lx = x0+(x1-x0)*t, ly = y0+(y1-y0)*t;
+      c.beginPath();
+      c.moveTo(lx, ly);
+      c.lineTo(lx + (W*0.44)*0.08, ly + H*0.62);
+      c.stroke();
+    }
+    /* horizontal tile courses */
+    for (let i=0; i<=10; i++) {
+      const t = i/10;
+      const ly = H*(0.39 + 0.61*t);
+      const lx = x0 + (ly-y0)/(y1-y0)*(x1-x0)*Math.min(1,(ly-y0)/(H*0.60));
+      c.strokeStyle = '#0e0c1a';
+      c.lineWidth = 1;
+      c.beginPath();
+      c.moveTo(Math.max(x0, lx), ly);
+      c.lineTo(W*1.02, ly);
+      c.stroke();
+    }
+
+    /* eave highlight */
+    c.strokeStyle = 'rgba(78,74,115,0.52)';
+    c.lineWidth = 2.5;
+    c.beginPath();
+    c.moveTo(W*0.58, H*0.18);
+    c.lineTo(W*1.02, H*0.36);
+    c.stroke();
+
+    /* tomoe on right roof */
+    const tomoe2 = [
+      [W*0.71, H*0.49, H*0.042],
+      [W*0.83, H*0.57, H*0.044],
+      [W*0.94, H*0.64, H*0.040],
+    ];
+    for (const [tx, ty, tr] of tomoe2) {
+      c.fillStyle = 'rgba(0,0,0,0.35)';
+      c.beginPath(); c.arc(tx+2, ty+3, tr, 0, Math.PI*2); c.fill();
+      c.fillStyle = '#100e1c';
+      c.beginPath(); c.arc(tx, ty, tr, 0, Math.PI*2); c.fill();
+      c.strokeStyle = '#08070e';
+      c.lineWidth = Math.max(1.5, tr*0.09);
+      for (let a=0; a<Math.PI*2; a+=Math.PI/4) {
+        c.beginPath();
+        c.moveTo(tx+Math.cos(a)*tr*0.40, ty+Math.sin(a)*tr*0.40);
+        c.lineTo(tx+Math.cos(a)*tr*0.92, ty+Math.sin(a)*tr*0.92);
+        c.stroke();
+      }
+      c.fillStyle = '#1c1a2a';
+      c.beginPath(); c.arc(tx, ty, tr*0.66, 0, Math.PI*2); c.fill();
+      c.fillStyle = '#0e0c18';
+      c.beginPath(); c.arc(tx, ty, tr*0.26, 0, Math.PI*2); c.fill();
+    }
+
+    c.restore();
+  }
+
+  /* ──────────────────────────────
+     WOODEN STAGE FLOOR
+  ────────────────────────────── */
+  function drawStageFloor(c, W, H) {
+    const fy = H*0.79, fh = H*0.055;
+
+    /* gold trim above */
+    c.fillStyle = '#8a6818';
+    c.fillRect(0, fy-5, W, 5);
+
+    /* planks */
+    const wg = c.createLinearGradient(0, fy, 0, fy+fh);
+    wg.addColorStop(0,    '#9a6a38');
+    wg.addColorStop(0.28, '#7a5228');
+    wg.addColorStop(1,    '#3a2010');
+    c.fillStyle = wg;
+    c.fillRect(0, fy, W, fh);
+
+    /* top sheen */
+    c.fillStyle = 'rgba(255,215,120,0.20)';
+    c.fillRect(0, fy, W, 4);
+
+    /* plank lines */
+    c.strokeStyle = 'rgba(0,0,0,0.28)';
+    c.lineWidth = 1;
+    for (let y=fy+10; y<fy+fh; y+=9) {
+      c.beginPath(); c.moveTo(0,y); c.lineTo(W,y); c.stroke();
+    }
+
+    /* center light reflection */
+    const cl = c.createLinearGradient(W*0.22,0, W*0.78,0);
+    cl.addColorStop(0,   'rgba(255,180,80,0)');
+    cl.addColorStop(0.5, 'rgba(255,180,80,0.18)');
+    cl.addColorStop(1,   'rgba(255,180,80,0)');
+    c.fillStyle = cl; c.fillRect(0, fy, W, fh);
+
+    /* bottom trim */
+    c.fillStyle = '#68501a';
+    c.fillRect(0, fy+fh, W, 5);
+    c.fillStyle = '#1a0c04';
+    c.fillRect(0, fy+fh+5, W, H-(fy+fh+5));
+  }
+
+  /* ──────────────────────────────
+     SIGN POST  (風林火山)
+  ────────────────────────────── */
+  function drawSignPost(c, W, H) {
+    const sx = W*0.105, sy = H*0.79;
+    const sw = 26, sh = 64;
+
+    /* post */
+    c.fillStyle = '#4a2e10';
+    c.fillRect(sx+sw/2-3, sy-sh*0.15, 6, sh*0.45);
+
+    /* board */
+    c.fillStyle = '#7c5020';
+    c.fillRect(sx, sy-sh, sw, sh*0.84);
+    c.strokeStyle = '#4a2e10';
     c.lineWidth = 2;
+    c.strokeRect(sx, sy-sh, sw, sh*0.84);
 
-    /* vertical posts */
-    const posts = [0, 0.38, 0.70, 1.0];
-    for (const p of posts) {
-      c.fillRect(x + w * p - 5, y0, 10, h);
+    /* inner dividers */
+    const ch = sh*0.84/4;
+    c.strokeStyle = 'rgba(50,25,8,0.55)'; c.lineWidth = 1;
+    for (let i=1; i<4; i++) {
+      c.beginPath(); c.moveTo(sx, sy-sh+ch*i); c.lineTo(sx+sw, sy-sh+ch*i); c.stroke();
     }
 
-    /* horizontal beams */
-    const beams = [0, 0.22, 0.44, 0.66, 0.88, 1.0];
-    for (const b of beams) {
-      c.fillRect(x, y0 + h * b - 4, w, 8);
-    }
-
-    /* diagonal braces */
-    c.lineWidth = 4;
-    c.strokeStyle = '#1a1208';
-    for (let i = 0; i < beams.length - 1; i++) {
-      const ya = y0 + h * beams[i];
-      const yb = y0 + h * beams[i + 1];
-      c.beginPath(); c.moveTo(x, ya); c.lineTo(x + w, yb); c.stroke();
-      c.beginPath(); c.moveTo(x + w, ya); c.lineTo(x, yb); c.stroke();
-    }
-
-    /* ambient orange glow from background on structure */
-    const glow = c.createLinearGradient(x, 0, x + w, 0);
-    glow.addColorStop(0, 'rgba(200,70,0,0.12)');
-    glow.addColorStop(1, 'rgba(200,70,0,0)');
-    c.fillStyle = glow;
-    c.fillRect(x, y0, w, h);
+    /* characters */
+    c.fillStyle = '#180a02';
+    c.font = `bold ${Math.round(sw*0.54)}px serif`;
+    c.textAlign = 'center';
+    ['風','林','火','山'].forEach((ch2,i) =>
+      c.fillText(ch2, sx+sw/2, sy-sh+ch*(i+0.80))
+    );
   }
 
   draw();
@@ -958,74 +1167,6 @@ const resultsScreen = document.getElementById('results-screen');
 const resultsWinner = document.getElementById('results-winner');
 const resultsList   = document.getElementById('results-list');
 
-/* ── Precompute wooden floor into offscreen canvas ── */
-const FLOOR_Y_RATIO = 0.70;
-const floorCanvas = (() => {
-  const W = 660, H = 456;
-  const oc = document.createElement('canvas');
-  oc.width = W; oc.height = H;
-  const c  = oc.getContext('2d');
-  const fy = Math.floor(H * FLOOR_Y_RATIO);
-
-  /* sky-to-floor gradient on lower portion */
-  const skyGrad = c.createLinearGradient(0, fy - 30, 0, fy + 10);
-  skyGrad.addColorStop(0, 'rgba(0,0,0,0)');
-  skyGrad.addColorStop(1, 'rgba(0,0,0,0.55)');
-  c.fillStyle = skyGrad;
-  c.fillRect(0, fy - 30, W, 40);
-
-  /* wood planks */
-  const plankColors = ['#8b5e30','#7a5028','#9b6a3a','#836030','#704e24'];
-  const plankH = 24;
-  let row = 0;
-  for (let y = fy; y < H; y += plankH, row++) {
-    const col = plankColors[row % plankColors.length];
-    c.fillStyle = col + 'cc';   /* ~80% opaque */
-    c.fillRect(0, y, W, Math.min(plankH, H - y));
-
-    /* subtle lighter top highlight on each plank */
-    c.fillStyle = 'rgba(255,200,120,0.12)';
-    c.fillRect(0, y, W, 4);
-
-    /* wood grain streaks (deterministic using row/col) */
-    c.strokeStyle = 'rgba(0,0,0,0.18)';
-    c.lineWidth = 1;
-    for (let gx = (row * 47) % 60; gx < W; gx += 55 + (row * 13 % 35)) {
-      c.beginPath();
-      c.moveTo(gx, y);
-      c.lineTo(gx + 10, y + Math.min(plankH, H - y));
-      c.stroke();
-    }
-
-    /* plank separator */
-    c.strokeStyle = 'rgba(0,0,0,0.45)';
-    c.lineWidth = 1.5;
-    c.beginPath();
-    c.moveTo(0, y); c.lineTo(W, y);
-    c.stroke();
-  }
-
-  /* bottom shadow */
-  const botGrad = c.createLinearGradient(0, H - 30, 0, H);
-  botGrad.addColorStop(0, 'rgba(0,0,0,0)');
-  botGrad.addColorStop(1, 'rgba(0,0,0,0.7)');
-  c.fillStyle = botGrad;
-  c.fillRect(0, H - 30, W, 30);
-
-  /* side shadow pillars */
-  const makeVGrad = (x0, x1, dark) => {
-    const g = c.createLinearGradient(x0, 0, x1, 0);
-    g.addColorStop(0, dark ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0)');
-    g.addColorStop(1, dark ? 'rgba(0,0,0,0)' : 'rgba(0,0,0,0.5)');
-    return g;
-  };
-  c.fillStyle = makeVGrad(0, 60, true);
-  c.fillRect(0, 0, 60, H);
-  c.fillStyle = makeVGrad(W - 60, W, false);
-  c.fillRect(W - 60, 0, 60, H);
-
-  return oc;
-})();
 
 /* ════════════════════════════════════════
    FIRE PARTICLE SYSTEM
@@ -1343,7 +1484,6 @@ function calcPower(blendshapes) {
 /* ── Canvas overlay ── */
 function drawOverlay(landmarks, power) {
   ctx.clearRect(0, 0, 660, 456);
-  ctx.drawImage(floorCanvas, 0, 0);
 
   const ratio = Math.min(power / 100000, 1);
   const lv    = getLevel(power);
